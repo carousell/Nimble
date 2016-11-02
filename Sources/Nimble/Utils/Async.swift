@@ -307,13 +307,14 @@ internal class Awaiter {
                 trigger: trigger)
     }
 
-    func poll<T>(_ pollInterval: TimeInterval, closure: @escaping () throws -> T?) -> AwaitPromiseBuilder<T> {
+    func poll<T>(_ pollInterval: TimeInterval,  afterInterval: TimeInterval, closure: @escaping () throws -> T?) -> AwaitPromiseBuilder<T> {
         let promise = AwaitPromise<T>()
         let timeoutSource = createTimerSource(timeoutQueue)
         let asyncSource = createTimerSource(asyncQueue)
         let trigger = AwaitTrigger(timeoutSource: timeoutSource, actionSource: asyncSource) {
             let interval = DispatchTimeInterval.nanoseconds(Int(pollInterval * TimeInterval(NSEC_PER_SEC)))
-            asyncSource.scheduleRepeating(deadline: .now(), interval: interval, leeway: pollLeeway)
+            let afterInterval = DispatchTimeInterval.nanoseconds(Int(afterInterval * TimeInterval(NSEC_PER_SEC)))
+            asyncSource.scheduleRepeating(deadline: .now() + afterInterval, interval: interval, leeway: pollLeeway)
             asyncSource.setEventHandler() {
                 do {
                     if let result = try closure() {
@@ -341,12 +342,13 @@ internal class Awaiter {
 internal func pollBlock(
     pollInterval: TimeInterval,
     timeoutInterval: TimeInterval,
+    afterInterval: TimeInterval,
     file: FileString,
     line: UInt,
     fnName: String = #function,
     expression: @escaping () throws -> Bool) -> AwaitResult<Bool> {
         let awaiter = NimbleEnvironment.activeInstance.awaiter
-        let result = awaiter.poll(pollInterval) { () throws -> Bool? in
+        let result = awaiter.poll(pollInterval, afterInterval: afterInterval) { () throws -> Bool? in
             do {
                 if try expression() {
                     return true

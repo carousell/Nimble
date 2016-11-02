@@ -5,6 +5,7 @@ import Foundation
 public struct AsyncDefaults {
     public static var Timeout: TimeInterval = 1
     public static var PollInterval: TimeInterval = 0.01
+    public static var AfterInterval: TimeInterval = 0
 }
 
 internal struct AsyncMatcherWrapper<T, U>: Matcher
@@ -13,11 +14,13 @@ internal struct AsyncMatcherWrapper<T, U>: Matcher
     let fullMatcher: U
     let timeoutInterval: TimeInterval
     let pollInterval: TimeInterval
+    let afterInterval: TimeInterval
 
-    init(fullMatcher: U, timeoutInterval: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval) {
+    init(fullMatcher: U, timeoutInterval: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, afterInterval: TimeInterval = AsyncDefaults.AfterInterval) {
       self.fullMatcher = fullMatcher
       self.timeoutInterval = timeoutInterval
       self.pollInterval = pollInterval
+      self.afterInterval = afterInterval
     }
 
     func matches(_ actualExpression: Expression<T>, failureMessage: FailureMessage) -> Bool {
@@ -26,6 +29,7 @@ internal struct AsyncMatcherWrapper<T, U>: Matcher
         let result = pollBlock(
             pollInterval: pollInterval,
             timeoutInterval: timeoutInterval,
+            afterInterval: afterInterval,
             file: actualExpression.location.file,
             line: actualExpression.location.line,
             fnName: fnName) {
@@ -53,6 +57,7 @@ internal struct AsyncMatcherWrapper<T, U>: Matcher
         let result = pollBlock(
             pollInterval: pollInterval,
             timeoutInterval: timeoutInterval,
+            afterInterval: afterInterval,
             file: actualExpression.location.file,
             line: actualExpression.location.line,
             fnName: "expect(...).toEventuallyNot(...)") {
@@ -86,7 +91,7 @@ extension Expectation {
     /// @discussion
     /// This function manages the main run loop (`NSRunLoop.mainRunLoop()`) while this function
     /// is executing. Any attempts to touch the run loop may cause non-deterministic behavior.
-    public func toEventually<U>(_ matcher: U, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, description: String? = nil)
+    public func toEventually<U>(_ matcher: U, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, after afterInterval: TimeInterval = AsyncDefaults.AfterInterval, description: String? = nil)
         where U: Matcher, U.ValueType == T
     {
         if expression.isClosure {
@@ -95,7 +100,8 @@ extension Expectation {
                 matcher: AsyncMatcherWrapper(
                     fullMatcher: matcher,
                     timeoutInterval: timeout,
-                    pollInterval: pollInterval),
+                    pollInterval: pollInterval,
+                    afterInterval: afterInterval),
                 to: "to eventually",
                 description: description
             )
@@ -111,7 +117,7 @@ extension Expectation {
     /// @discussion
     /// This function manages the main run loop (`NSRunLoop.mainRunLoop()`) while this function
     /// is executing. Any attempts to touch the run loop may cause non-deterministic behavior.
-    public func toEventuallyNot<U>(_ matcher: U, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, description: String? = nil)
+    public func toEventuallyNot<U>(_ matcher: U, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, after afterInterval: TimeInterval = AsyncDefaults.AfterInterval, description: String? = nil)
         where U: Matcher, U.ValueType == T
     {
         if expression.isClosure {
@@ -120,7 +126,8 @@ extension Expectation {
                 matcher: AsyncMatcherWrapper(
                     fullMatcher: matcher,
                     timeoutInterval: timeout,
-                    pollInterval: pollInterval),
+                    pollInterval: pollInterval,
+                    afterInterval: afterInterval),
                 toNot: "to eventually not",
                 description: description
             )
@@ -138,9 +145,9 @@ extension Expectation {
     /// @discussion
     /// This function manages the main run loop (`NSRunLoop.mainRunLoop()`) while this function
     /// is executing. Any attempts to touch the run loop may cause non-deterministic behavior.
-    public func toNotEventually<U>(_ matcher: U, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, description: String? = nil)
+    public func toNotEventually<U>(_ matcher: U, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, after afterInterval: TimeInterval = AsyncDefaults.PollInterval, description: String? = nil)
         where U: Matcher, U.ValueType == T
     {
-        return toEventuallyNot(matcher, timeout: timeout, pollInterval: pollInterval, description: description)
+        return toEventuallyNot(matcher, timeout: timeout, pollInterval: pollInterval, after: afterInterval, description: description)
     }
 }
