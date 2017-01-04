@@ -316,7 +316,7 @@ internal class Awaiter {
         let asyncSource = createTimerSource(asyncQueue)
         let trigger = AwaitTrigger(timeoutSource: timeoutSource, actionSource: asyncSource) {
             let interval = DispatchTimeInterval.nanoseconds(Int(pollInterval * TimeInterval(NSEC_PER_SEC)))
-            let afterInterval = DispatchTimeInterval.nanoseconds(Int(afterInterval * TimeInterval(NSEC_PER_SEC)))
+            let afterInterval = DispatchTimeInterval.milliseconds(Int(afterInterval * TimeInterval(1000)))
             asyncSource.scheduleRepeating(deadline: .now() + afterInterval, interval: interval, leeway: pollLeeway)
             asyncSource.setEventHandler {
                 do {
