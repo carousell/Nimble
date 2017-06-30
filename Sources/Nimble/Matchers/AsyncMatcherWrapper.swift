@@ -8,7 +8,7 @@ public struct AsyncDefaults {
     public static var AfterInterval: TimeInterval = 0
 }
 
-fileprivate func async<T>(style: ExpectationStyle, predicate: Predicate<T>, timeout: TimeInterval, poll: TimeInterval, fnName: String) -> Predicate<T> {
+fileprivate func async<T>(style: ExpectationStyle, predicate: Predicate<T>, timeout: TimeInterval, poll: TimeInterval, after: TimeInterval, fnName: String) -> Predicate<T> {
     return Predicate { actualExpression in
         let uncachedExpression = actualExpression.withoutCaching()
         let fnName = "expect(...).\(fnName)(...)"
@@ -16,6 +16,7 @@ fileprivate func async<T>(style: ExpectationStyle, predicate: Predicate<T>, time
         let result = pollBlock(
             pollInterval: poll,
             timeoutInterval: timeout,
+            afterInterval: after,
             file: actualExpression.location.file,
             line: actualExpression.location.line,
             fnName: fnName) {
@@ -119,13 +120,13 @@ extension Expectation {
     /// @discussion
     /// This function manages the main run loop (`NSRunLoop.mainRunLoop()`) while this function
     /// is executing. Any attempts to touch the run loop may cause non-deterministic behavior.
-    public func toEventually(_ predicate: Predicate<T>, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, description: String? = nil) {
+    public func toEventually(_ predicate: Predicate<T>, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, afterInterval: TimeInterval = AsyncDefaults.AfterInterval, description: String? = nil) {
         nimblePrecondition(expression.isClosure, "NimbleInternalError", toEventuallyRequiresClosureError.stringValue)
 
         let (pass, msg) = execute(
             expression,
             .toMatch,
-            async(style: .toMatch, predicate: predicate, timeout: timeout, poll: pollInterval, fnName: "toEventually"),
+            async(style: .toMatch, predicate: predicate, timeout: timeout, poll: pollInterval, after: afterInterval, fnName: "toEventually"),
             to: "to eventually",
             description: description,
             captureExceptions: false
@@ -139,13 +140,13 @@ extension Expectation {
     /// @discussion
     /// This function manages the main run loop (`NSRunLoop.mainRunLoop()`) while this function
     /// is executing. Any attempts to touch the run loop may cause non-deterministic behavior.
-    public func toEventuallyNot(_ predicate: Predicate<T>, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, description: String? = nil) {
+    public func toEventuallyNot(_ predicate: Predicate<T>, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, afterInterval: TimeInterval = AsyncDefaults.AfterInterval, description: String? = nil) {
         nimblePrecondition(expression.isClosure, "NimbleInternalError", toEventuallyRequiresClosureError.stringValue)
 
         let (pass, msg) = execute(
             expression,
             .toNotMatch,
-            async(style: .toNotMatch, predicate: predicate, timeout: timeout, poll: pollInterval, fnName: "toEventuallyNot"),
+            async(style: .toNotMatch, predicate: predicate, timeout: timeout, poll: pollInterval, after: afterInterval, fnName: "toEventuallyNot"),
             to: "to eventually not",
             description: description,
             captureExceptions: false
@@ -161,8 +162,8 @@ extension Expectation {
     /// @discussion
     /// This function manages the main run loop (`NSRunLoop.mainRunLoop()`) while this function
     /// is executing. Any attempts to touch the run loop may cause non-deterministic behavior.
-    public func toNotEventually(_ predicate: Predicate<T>, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, description: String? = nil) {
-        return toEventuallyNot(predicate, timeout: timeout, pollInterval: pollInterval, description: description)
+    public func toNotEventually(_ predicate: Predicate<T>, timeout: TimeInterval = AsyncDefaults.Timeout, pollInterval: TimeInterval = AsyncDefaults.PollInterval, afterInterval: TimeInterval = AsyncDefaults.AfterInterval, description: String? = nil) {
+        return toEventuallyNot(predicate, timeout: timeout, pollInterval: pollInterval, afterInterval: afterInterval, description: description)
     }
 }
 
