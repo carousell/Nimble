@@ -1,10 +1,10 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
     name: "Nimble",
     platforms: [
-      .macOS(.v10_10), .iOS(.v9), .tvOS(.v9)
+      .macOS(.v10_13), .iOS(.v12), .tvOS(.v12)
     ],
     products: [
         .library(name: "Nimble", targets: ["Nimble"]),
@@ -14,16 +14,20 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Nimble", 
+            name: "Nimble",
             dependencies: {
-                #if os(macOS)
                 return [
-                    "CwlPreconditionTesting",
-                    .product(name: "CwlPosixPreconditionTesting", package: "CwlPreconditionTesting")
+                    .product(
+                        name: "CwlPreconditionTesting",
+                        package: "CwlPreconditionTesting",
+                        condition: .when(platforms: [.macOS])
+                    ),
+                    .product(
+                        name: "CwlPosixPreconditionTesting",
+                        package: "CwlPreconditionTesting",
+                        condition: .when(platforms: [.macOS])
+                    )
                 ]
-                #else
-                return []
-                #endif
             }()
         ),
         .testTarget(
